@@ -1,8 +1,10 @@
 package study.querydsl;
 
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -271,7 +273,7 @@ public class QuerydslBasicTest {
     }
 
     @Test
-    public void join_on_no_relation(){
+    public void join_on_no_relation() {
 
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
@@ -296,7 +298,7 @@ public class QuerydslBasicTest {
     EntityManagerFactory emf;
 
     @Test
-    public void fetchJoin(){
+    public void fetchJoin() {
         em.flush();
         em.clear();
 
@@ -317,7 +319,7 @@ public class QuerydslBasicTest {
 
     //나이가 가장 많은 회원 조회
     @Test
-    public void subQuery(){
+    public void subQuery() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
         QMember memberSub = new QMember("memberSub");
@@ -336,7 +338,7 @@ public class QuerydslBasicTest {
     }
 
     @Test
-    public void selectSubQuery(){
+    public void selectSubQuery() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
         QMember memberSub = new QMember("memberSub");
@@ -349,13 +351,13 @@ public class QuerydslBasicTest {
                 .from(member)
                 .fetch();
 
-        for(Tuple tuple : result){
+        for (Tuple tuple : result) {
             System.out.println("tuple = " + tuple);
         }
     }
 
     @Test
-    public void basicCase(){
+    public void basicCase() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
         List<String> result = queryFactory
@@ -367,13 +369,13 @@ public class QuerydslBasicTest {
                 .fetch();
 
 
-        for(String s : result){
+        for (String s : result) {
             System.out.println("s = " + s);
         }
     }
 
     @Test
-    public void simpleProjection(){
+    public void simpleProjection() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
 
@@ -381,15 +383,15 @@ public class QuerydslBasicTest {
                 .select(member.username)
                 .from(member)
                 .fetch();
-        
 
-        for(String s : result){
+
+        for (String s : result) {
             System.out.println("s = " + s);
         }
     }
 
     @Test
-    public void tupleProjection(){
+    public void tupleProjection() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
 
@@ -399,7 +401,7 @@ public class QuerydslBasicTest {
                 .fetch();
 
 
-        for(Tuple t : result){
+        for (Tuple t : result) {
             String username = t.get(member.username);
             Integer age = t.get(member.age);
             System.out.println("username = " + username);
@@ -410,18 +412,18 @@ public class QuerydslBasicTest {
 
     //new Operation을 활용하는 방법
     @Test
-    public void findDtoByJPQL(){
+    public void findDtoByJPQL() {
         List<MemberDto> result = em.createQuery("select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m", MemberDto.class)
                 .getResultList();
 
 
-        for(MemberDto memberDto : result){
+        for (MemberDto memberDto : result) {
             System.out.println("memberDto = " + memberDto);
         }
     }
 
     @Test
-    public void findDtoBySetter(){
+    public void findDtoBySetter() {
 
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
@@ -430,13 +432,13 @@ public class QuerydslBasicTest {
                 .from(member)
                 .fetch();
 
-        for(MemberDto memberDto : result){
+        for (MemberDto memberDto : result) {
             System.out.println("memberDto = " + memberDto);
         }
     }
 
     @Test
-    public void findDtoByFiled(){
+    public void findDtoByFiled() {
 
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
@@ -445,13 +447,13 @@ public class QuerydslBasicTest {
                 .from(member)
                 .fetch();
 
-        for(MemberDto memberDto : result){
+        for (MemberDto memberDto : result) {
             System.out.println("memberDto = " + memberDto);
         }
     }
 
     @Test
-    public void findDtoByConstructor(){
+    public void findDtoByConstructor() {
 
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
@@ -460,13 +462,13 @@ public class QuerydslBasicTest {
                 .from(member)
                 .fetch();
 
-        for(MemberDto memberDto : result){
+        for (MemberDto memberDto : result) {
             System.out.println("memberDto = " + memberDto);
         }
     }
 
     @Test
-    public void findUserDtoByFiled(){
+    public void findUserDtoByFiled() {
 
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
@@ -482,8 +484,9 @@ public class QuerydslBasicTest {
             System.out.println("userDto = " + userDto);
         }
     }
+
     @Test
-    public void findDtoByQueryProjection(){
+    public void findDtoByQueryProjection() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
 
@@ -499,4 +502,74 @@ public class QuerydslBasicTest {
         }
     }
 
+
+    @Test
+    public void dynamicQuery_BooleanBuilder() {
+        String usernameParam = "member1";
+        Integer ageParam = null;
+
+        List<Member> result = searchMember1(usernameParam, ageParam);
+        Assertions.assertThat(result).size().isEqualTo(1);
+    }
+
+    private List<Member> searchMember1(String usernameParam, Integer ageParam) {
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        BooleanBuilder br = new BooleanBuilder();
+
+        if (usernameParam != null) {
+            br.and(member.username.eq(usernameParam));
+        }
+
+        if (ageParam != null) {
+            br.and(member.age.eq(ageParam));
+        }
+        return queryFactory
+                .selectFrom(member)
+                .where(br)
+                .fetch();
+    }
+
+
+    @Test
+    public void dynamicQuery_WhereParam() {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember2(usernameParam, ageParam);
+        Assertions.assertThat(result).size().isEqualTo(1);
+    }
+
+    private List<Member> searchMember2(String usernameParam, Integer ageParam) {
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+
+        return queryFactory
+                .selectFrom(member)
+                .where(usernameEq(usernameParam), ageEq(ageParam))
+                .fetch();
+
+    }
+
+    private Predicate usernameEq(String usernameParam) {
+
+        if (usernameParam == null) {
+            return null;
+            //이렇게 되면 where 절에 null이 걸려
+            //아무 역할을 하지 않아 동적쿼리가 만들어진다.
+
+        }
+        return member.username.eq(usernameParam);
+    }
+
+    private Predicate ageEq(Integer ageParam) {
+        if (ageParam == null) {
+            return null;
+        }
+        return member.age.eq(ageParam);
+    }
 }
+
+
