@@ -3,6 +3,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Commit;
 import study.querydsl.entity.Member;
+import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
@@ -306,6 +308,45 @@ public class QuerydslBasicTest {
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
         Assertions.assertThat(loaded).as("패치 조인 적용").isTrue();
 
+    }
+
+    //나이가 가장 많은 회원 조회
+    @Test
+    public void subQuery(){
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(
+                        JPAExpressions
+                                .select(memberSub.age.max())
+                                .from(memberSub)
+                )).fetch();
+
+
+        Assertions.assertThat(result).extracting("age")
+                .containsExactly(40);
+    }
+
+    @Test
+    public void selectSubQuery(){
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        QMember memberSub = new QMember("memberSub");
+
+
+        List<Tuple> result = queryFactory
+                .select(member.username, JPAExpressions
+                        .select(memberSub.age.avg())
+                        .from(memberSub))
+                .from(member)
+                .fetch();
+
+        for(Tuple tuple : result){
+            System.out.println("tuple = " + tuple);
+        }
 
     }
 }
