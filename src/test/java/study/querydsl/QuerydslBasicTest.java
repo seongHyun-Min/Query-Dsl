@@ -15,6 +15,8 @@ import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 import javax.transaction.Transactional;
 
 import java.util.List;
@@ -168,7 +170,7 @@ public class QuerydslBasicTest {
     }
 
     @Test
-    public void aggregation(){
+    public void aggregation() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
         List<Tuple> result = queryFactory
@@ -193,7 +195,7 @@ public class QuerydslBasicTest {
     }
 
     @Test
-    public void group() throws Exception{
+    public void group() throws Exception {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
         List<Tuple> result = queryFactory
@@ -211,4 +213,99 @@ public class QuerydslBasicTest {
 
     }
 
+    @Test
+    public void join() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+
+        Assertions.assertThat(result)
+                .extracting("username")
+                .containsExactly("member1", "member2");
+
+    }
+
+
+    @Test
+    public void LeftJoin() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .leftJoin(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+    }
+
+    @Test
+    public void join_on() {
+
+        //필터링
+        //회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .join(member.team, team)
+                .on(team.name.eq("teamA"))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+    @Test
+    public void join_on_no_relation(){
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team)
+                .on(member.username.eq(team.name))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    public void fetchJoin(){
+        em.flush();
+        em.clear();
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        Assertions.assertThat(loaded).as("패치 조인 적용").isTrue();
+
+
+    }
 }
