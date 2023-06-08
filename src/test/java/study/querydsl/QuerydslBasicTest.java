@@ -570,6 +570,50 @@ public class QuerydslBasicTest {
         }
         return member.age.eq(ageParam);
     }
+
+
+
+    @Test
+    public void bulkUpdate(){
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+        //영향을 받은 데이터의 수가 count로 나온다.
+
+        // member 1 = 10 -> 비회원
+        // member 2 = 20 -> 비회원
+        // member 3 = 30 -> 유지
+
+        em.flush();
+        em.clear();
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for (Member member1 : result) {
+            System.out.println("member1 = " + member1);
+
+        }
+    }
+
+    @Test
+    public void bulkAdd(){
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
+        queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+    }
+
+
 }
 
 
