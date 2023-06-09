@@ -2,7 +2,6 @@ package study.querydsl.repository;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.annotation.Testable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import study.querydsl.dto.MemberSearchCondition;
@@ -14,9 +13,6 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 
 
 @SpringBootTest
