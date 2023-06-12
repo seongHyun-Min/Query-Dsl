@@ -39,6 +39,9 @@ class MemberRepositoryTest {
 
         Assertions.assertThat(result2).containsExactly(member);
 
+        //테스트 코드 추가
+
+
     }
 
 }
